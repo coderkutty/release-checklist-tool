@@ -1,0 +1,62 @@
+<h2>Release Tool</h2>
+
+<input id="name" placeholder="Name" />
+<input id="date" type="date" />
+<input id="info" placeholder="Additional info" />
+<button onclick="createRelease()">Create</button>
+
+<button onclick="loadReleases()">Load Releases</button>
+
+<p>Click steps to update status</p>
+
+<div id="list"></div>
+
+<script>
+const API = "http://localhost:5000";
+
+async function createRelease() {
+  const name = document.getElementById("name").value;
+  const date = document.getElementById("date").value;
+  const info = document.getElementById("info").value;
+
+  await fetch(API + "/releases", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ name, date, info })
+  });
+
+  loadReleases();
+}
+
+async function loadReleases() {
+  const res = await fetch(API + "/releases");
+  const data = await res.json();
+
+  const div = document.getElementById("list");
+  div.innerHTML = "";
+
+  data.forEach(r => {
+    const el = document.createElement("div");
+
+    el.innerHTML = `
+      <h3>${r.name} (${r.status})</h3>
+      <p>${r.info || ""}</p>
+      ${r.steps.map((s, i) =>
+        `<button onclick="toggle(${r.id}, ${i})">${s ? "✅" : "⬜"}</button>`
+      ).join("")}
+    `;
+
+    div.appendChild(el);
+  });
+}
+
+async function toggle(id, stepIndex) {
+  await fetch(API + "/releases/" + id + "/step", {
+    method: "PUT",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ stepIndex })
+  });
+
+  loadReleases();
+}
+</script>
